@@ -1,0 +1,4 @@
+﻿id,title,doi,year,journal,citation_count,source,url,authors,keywords
+1,面向教育数据挖掘的深度学习方法研究,10.1000/demo.education.001,2021,学习分析演示期刊,42,demo,https://example.com/demo1,陈晓; 李博,学习分析; 学生表现; 教育; 数据挖掘; 深度学习
+2,基于知识图谱的学术论文推荐方法,10.1000/demo.recommendation.002,2022,信息系统演示期刊,31,demo,https://example.com/demo2,李博; 王可,关键词; 引用网络; 相似度; 知识图谱; 论文推荐
+3,人工智能教育领域的研究趋势分析,10.1000/demo.trends.003,2023,人工智能综述演示期刊,55,demo,https://example.com/demo3,陈晓; 张迪,主题分析; 人工智能; 作者合作; 教育; 研究趋势
