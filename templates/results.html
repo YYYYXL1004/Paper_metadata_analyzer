@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">检索结果</p>
+    <h1>{{ query }}</h1>
+    <div class="head-meta">
+      <span class="status-chip">{{ source_label }}</span>
+      <span>{{ papers|length }} 条论文记录</span>
+      <span>按相关性优先排序</span>
+    </div>
+  </div>
+  <div class="actions">
+    <a class="button" href="{{ analysis_url }}">分析本次结果</a>
+    <a class="button secondary" href="{{ export_url }}">导出本次 CSV</a>
+  </div>
+</section>
+
+{% if status_message %}
+  <div class="notice success">{{ status_message }}</div>
+{% endif %}
+{% if error %}
+  <div class="notice error">{{ error }}</div>
+{% endif %}
+
+<section class="paper-list">
+  {% for paper in papers %}
+    <article class="paper-card">
+      <div class="paper-main">
+        <div class="paper-topline">
+          <span class="score-chip">相关性 {{ paper.relevance_score or 0 }}</span>
+          <span>综合分 {{ paper.rank_score or 0 }}</span>
+          <span>{{ paper.year or "年份未知" }}</span>
+          <span>{{ paper.source or "来源未知" }}</span>
+          <span>引用 {{ paper.citation_count or 0 }}</span>
+        </div>
+        <h2>{{ paper.title }}</h2>
+        <p class="meta">{{ paper.journal or "来源未知" }}</p>
+        {% if paper.authors %}
+          <p class="authors">{{ paper.authors[:4]|join("、") }}</p>
+        {% endif %}
+        {% if paper.keywords %}
+          <div class="tag-row">
+            {% for word in paper.keywords[:6] %}
+              <span>{{ word }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <p class="doi">{{ paper.doi or "暂无 DOI" }}</p>
+      </div>
+      <div class="paper-actions">
+        {% if paper.url %}
+          <a class="text-link" href="{{ paper.url }}" target="_blank" rel="noreferrer">原文链接</a>
+        {% endif %}
+        <a class="button secondary" href="{{ url_for('recommend', paper_id=paper.id, ids=paper_ids, query=query) }}">推荐相关论文</a>
+      </div>
+    </article>
+  {% else %}
+    <div class="empty">暂未找到论文。可以换一个英文关键词，或稍后重新调用学术 API。</div>
+  {% endfor %}
+</section>
+{% endblock %}

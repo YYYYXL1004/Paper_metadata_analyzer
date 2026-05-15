@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">相关论文推荐</p>
+    <h1>{{ target.title if target else "未找到论文" }}</h1>
+    {% if target %}
+      <div class="head-meta">
+        <span>{{ target.year or "年份未知" }}</span>
+        <span>{{ target.journal or "来源未知" }}</span>
+      </div>
+    {% endif %}
+  </div>
+  <a class="button secondary" href="{{ back_url }}">返回分析</a>
+</section>
+
+{% if target %}
+  <section class="paper-list">
+    {% for item in recommendations %}
+      <article class="paper-card">
+        <div class="paper-main">
+          <div class="paper-topline">
+            <span>综合得分 {{ item.score }}</span>
+            <span>关键词 {{ item.keyword_score }}</span>
+            <span>引用 {{ item.citation_score }}</span>
+            <span>新鲜度 {{ item.freshness_score }}</span>
+          </div>
+          <h2>{{ item.paper.title }}</h2>
+          <p class="meta">{{ item.paper.year or "年份未知" }} · {{ item.paper.journal or "来源未知" }}</p>
+          <p class="doi">{{ item.paper.doi or "暂无 DOI" }}</p>
+        </div>
+      </article>
+    {% else %}
+      <div class="empty">暂未找到相关论文，请先检索或导入更多论文数据。</div>
+    {% endfor %}
+  </section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero-workbench">
+  <div class="hero-copy">
+    <p class="eyebrow">实时学术 API · 元数据分析</p>
+    <h1>从真实论文数据开始，完成趋势、合作与推荐分析。</h1>
+    <p class="muted">
+      默认实时调用 OpenAlex、CrossRef 或 arXiv 获取论文元数据，并写入 SQLite；只有勾选缓存时才优先读取本地历史数据。
+    </p>
+    <div class="source-strip">
+      <span>OpenAlex API</span>
+      <span>CrossRef API</span>
+      <span>arXiv API</span>
+      <span>SQLite</span>
+      <span>CSV</span>
+    </div>
+    <div class="hero-mini-metrics">
+      <div>
+        <strong>8 类</strong>
+        <span>分析图表</span>
+      </div>
+      <div>
+        <strong>5 张</strong>
+        <span>数据表</span>
+      </div>
+      <div>
+        <strong>3 项</strong>
+        <span>加分功能</span>
+      </div>
+    </div>
+  </div>
+
+  <form class="search-card" method="post">
+    <div class="form-head">
+      <span class="form-badge">实时检索</span>
+      <strong>论文数据入口</strong>
+    </div>
+    {% if error %}
+      <div class="notice error">{{ error }}</div>
+    {% endif %}
+    <label>
+      关键词 / DOI / 研究主题
+      <input name="query" placeholder="artificial intelligence education" required>
+    </label>
+    <div class="form-row">
+      <label>
+        数据源
+        <select name="source">
+          <option value="openalex">OpenAlex（引用更全）</option>
+          <option value="crossref">CrossRef</option>
+          <option value="arxiv">arXiv</option>
+        </select>
+      </label>
+      <label>
+        数量上限
+        <input type="number" name="limit" min="3" max="50" value="20">
+      </label>
+    </div>
+    <label class="checkline">
+      <input type="checkbox" name="use_cache">
+      优先使用本地真实 API 缓存
+    </label>
+    <button type="submit">调用 API 检索论文</button>
+    <p class="form-hint">OpenAlex 引用数更完整；CrossRef 会补充高引用候选；arXiv 通常不提供引用次数，引用数可能为 0。</p>
+  </form>
+</section>
+
+<section class="score-board">
+  <article>
+    <span class="score-no">01</span>
+    <h2>基础功能</h2>
+    <p>网络请求、JSON 解析、正则提取、SQLite 存储、CSV 导出与 matplotlib 图表。</p>
+  </article>
+  <article>
+    <span class="score-no">02</span>
+    <h2>分析能力</h2>
+    <p>年度趋势、关键词分布、引用分布、作者统计和自动趋势摘要。</p>
+  </article>
+  <article>
+    <span class="score-no">03</span>
+    <h2>加分模块</h2>
+    <p>NumPy 作者合作矩阵、关键词相似度推荐和 Flask 可视化页面。</p>
+  </article>
+</section>
+
+<section class="workflow-strip">
+  <div class="workflow-card step-blue">
+    <span>01</span>
+    <strong>API 获取</strong>
+    <p>实时请求 OpenAlex/CrossRef/arXiv，失败时提示并保留真实缓存。</p>
+  </div>
+  <div class="workflow-card step-green">
+    <span>02</span>
+    <strong>解析入库</strong>
+    <p>解析 JSON/XML，提取 DOI、作者、年份、关键词并写入 SQLite。</p>
+  </div>
+  <div class="workflow-card step-amber">
+    <span>03</span>
+    <strong>统计建模</strong>
+    <p>计算趋势、引用、期刊、作者、合作网络和推荐分数。</p>
+  </div>
+  <div class="workflow-card step-rose">
+    <span>04</span>
+    <strong>可视化导出</strong>
+    <p>生成图表、数据表、CSV 文件和论文推荐页面。</p>
+  </div>
+</section>
+
+<section class="feature-lab">
+  <article class="feature-panel feature-purple">
+    <div>
+      <span class="feature-kicker">Visualization</span>
+      <h2>专业分析仪表盘</h2>
+      <p>年度趋势、关键词、引用分布、数据源占比、期刊排行和作者排行集中展示。</p>
+    </div>
+    <strong>8 图</strong>
+  </article>
+  <article class="feature-panel feature-green">
+    <div>
+      <span class="feature-kicker">Network</span>
+      <h2>作者合作网络</h2>
+      <p>使用 NumPy 构建邻接矩阵，统计节点、边数、密度和中心作者。</p>
+    </div>
+    <strong>矩阵</strong>
+  </article>
+  <article class="feature-panel feature-orange">
+    <div>
+      <span class="feature-kicker">Recommendation</span>
+      <h2>相关论文推荐</h2>
+      <p>综合关键词相似度、引用得分和年份新鲜度，输出相关论文列表。</p>
+    </div>
+    <strong>TopN</strong>
+  </article>
+</section>
+{% endblock %}

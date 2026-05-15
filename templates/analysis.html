@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-head analysis-head">
+  <div>
+    <p class="eyebrow">专业分析仪表盘</p>
+    <h1>{{ analysis_title }}</h1>
+    <p class="muted">{{ summary }}</p>
+  </div>
+  <a class="button" href="{{ export_url }}">{{ "导出本次 CSV" if stats.total else "先检索论文" }}</a>
+</section>
+
+{% if status_message %}
+  <div class="notice success">{{ status_message }}</div>
+{% endif %}
+{% if error %}
+  <div class="notice error">{{ error }}</div>
+{% endif %}
+
+<section class="metric-grid">
+  <div class="metric accent-blue">
+    <span>论文总数</span>
+    <strong>{{ stats.total }}</strong>
+    <small>{{ stats.earliest_year or "未知" }} - {{ stats.latest_year or "未知" }}</small>
+  </div>
+  <div class="metric accent-green">
+    <span>平均引用</span>
+    <strong>{{ stats.avg_citation }}</strong>
+    <small>中位数 {{ stats.median_citation }}，标准差 {{ stats.citation_std }}</small>
+  </div>
+  <div class="metric accent-amber">
+    <span>最高引用</span>
+    <strong>{{ stats.max_citation }}</strong>
+    <small>总引用 {{ stats.total_citation }}</small>
+  </div>
+  <div class="metric accent-rose">
+    <span>作者数量</span>
+    <strong>{{ stats.unique_authors }}</strong>
+    <small>篇均作者 {{ stats.avg_authors_per_paper }}</small>
+  </div>
+</section>
+
+<section class="compact-metrics">
+  <div class="mini-stat">
+    <span>期刊 / 来源</span>
+    <strong>{{ stats.unique_journals }}</strong>
+  </div>
+  <div class="mini-stat">
+    <span>活跃年份</span>
+    <strong>{{ stats.active_years }}</strong>
+  </div>
+  <div class="mini-stat">
+    <span>近五年论文</span>
+    <strong>{{ stats.recent_count }}</strong>
+  </div>
+  <div class="mini-stat">
+    <span>DOI 覆盖率</span>
+    <strong>{{ stats.doi_coverage_rate }}%</strong>
+  </div>
+  <div class="mini-stat">
+    <span>有引文记录</span>
+    <strong>{{ stats.cited_rate }}%</strong>
+  </div>
+</section>
+
+<section class="insight-grid">
+  <div class="panel insight-panel">
+    <div class="panel-title">
+      <h2>自动研究洞察</h2>
+      <span>Auto Insights</span>
+    </div>
+    <ul class="insight-list">
+      {% for insight in insights %}
+        <li>{{ insight }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="panel network-panel">
+    <div class="panel-title">
+      <h2>合作网络概览</h2>
+      <span>NumPy Matrix</span>
+    </div>
+    <div class="network-stats">
+      <div><span>节点</span><strong>{{ network.authors|length }}</strong></div>
+      <div><span>边数</span><strong>{{ network.edge_count }}</strong></div>
+      <div><span>密度</span><strong>{{ network.density }}</strong></div>
+      <div><span>孤立作者</span><strong>{{ network.isolated_count }}</strong></div>
+    </div>
+  </div>
+</section>
+
+<section class="chart-grid pro-chart-grid">
+  {% for chart in charts %}
+    <figure class="chart">
+      <figcaption>{{ chart.title }}</figcaption>
+      <img src="{{ url_for('static', filename='charts/' ~ chart.image) }}" alt="{{ chart.title }}">
+    </figure>
+  {% endfor %}
+</section>
+
+<section class="data-grid">
+  <div class="panel">
+    <div class="panel-title">
+      <h2>高频关键词</h2>
+      <span>Top 15</span>
+    </div>
+    <table>
+      <tbody>
+      {% for word, count in stats.top_keywords %}
+        <tr><td>{{ word }}</td><td>{{ count }}</td></tr>
+      {% else %}
+        <tr><td colspan="2">暂无关键词数据。</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">
+      <h2>高产作者</h2>
+      <span>Top 10</span>
+    </div>
+    <table>
+      <tbody>
+      {% for author, count in stats.top_authors %}
+        <tr><td>{{ author }}</td><td>{{ count }}</td></tr>
+      {% else %}
+        <tr><td colspan="2">暂无作者数据。</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="data-grid">
+  <div class="panel">
+    <div class="panel-title">
+      <h2>期刊 / 来源排行</h2>
+      <span>Top 10</span>
+    </div>
+    <table>
+      <tbody>
+      {% for journal, count in stats.top_journals %}
+        <tr><td>{{ journal }}</td><td>{{ count }}</td></tr>
+      {% else %}
+        <tr><td colspan="2">暂无期刊数据。</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">
+      <h2>数据源分布</h2>
+      <span>Source</span>
+    </div>
+    <table>
+      <tbody>
+      {% for source, count in stats.source_counts %}
+        <tr><td>{{ source }}</td><td>{{ count }}</td></tr>
+      {% else %}
+        <tr><td colspan="2">暂无数据源信息。</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel wide-panel">
+  <div class="panel-title">
+    <h2>高被引论文 Top 10</h2>
+    <span>本次结果</span>
+  </div>
+  <div class="rank-list">
+    {% for paper in stats.top_cited %}
+      <article class="rank-item">
+        <div>
+          <strong>{{ loop.index }}. {{ paper.title }}</strong>
+          <p>{{ paper.year or "年份未知" }} · {{ paper.journal or "来源未知" }}</p>
+        </div>
+        <div class="paper-actions compact-actions">
+          <span>{{ paper.citation_count or 0 }} 引用</span>
+          <a class="text-link" href="{{ url_for('recommend', paper_id=paper.id, ids=paper_ids, query=query) }}">推荐</a>
+        </div>
+      </article>
+    {% else %}
+      <div class="empty">暂无高被引论文数据。</div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel wide-panel">
+  <div class="panel-title">
+    <h2>主要合作关系</h2>
+    <span>合著边权</span>
+  </div>
+  <table>
+    <thead>
+      <tr><th>作者 A</th><th>作者 B</th><th>合作次数</th></tr>
+    </thead>
+    <tbody>
+      {% for a, b, weight in network.edges %}
+        <tr><td>{{ a }}</td><td>{{ b }}</td><td>{{ weight }}</td></tr>
+      {% else %}
+        <tr><td colspan="3">暂无合作关系数据。</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}
