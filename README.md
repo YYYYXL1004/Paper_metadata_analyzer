@@ -4,7 +4,7 @@
 
 本项目是 Python 课程大作业“学术论文元数据分析工具”。系统可以通过 OpenAlex、CrossRef 和 arXiv 学术 API 获取真实论文元数据，完成论文检索、数据清洗、SQLite 存储、统计分析、可视化展示、CSV 导出和相关论文推荐。
 
-项目重点覆盖网络请求、JSON/XML 解析、正则表达式、函数模块化、SQLite 数据库、文件导出、matplotlib 可视化、NumPy 合作网络分析和 Flask Web 页面等课程要求。
+项目重点覆盖网络请求、JSON/XML 解析、正则表达式、函数模块化、SQLite 数据库、文件导出、matplotlib 可视化、NumPy   合作网络分析和 Flask Web 页面等课程要求。
 
 ## 二、主要功能
 
