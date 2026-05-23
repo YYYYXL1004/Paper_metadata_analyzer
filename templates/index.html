@@ -57,12 +57,22 @@
         <input type="number" name="limit" min="3" max="5000" value="100">
       </label>
     </div>
+    <div class="form-row form-row-equal">
+      <label>
+        年份从
+        <input type="number" name="year_from" min="1900" max="2030" placeholder="例如 2020">
+      </label>
+      <label>
+        年份到
+        <input type="number" name="year_to" min="1900" max="2030" placeholder="例如 2025">
+      </label>
+    </div>
     <label class="checkline">
       <input type="checkbox" name="use_cache">
       优先使用本地真实 API 缓存
     </label>
     <button type="submit">调用 API 检索论文</button>
-    <p class="form-hint">OpenAlex 通过 cursor 自动分页（每页 200），最多可一次拉取 5000 条。常用 100-500 条够用，再到结果页二次筛选。</p>
+    <p class="form-hint">建议设置年份范围（例如 2020-2025）筛掉过旧的论文。OpenAlex 通过 cursor 自动分页（每页 200），最多可一次拉取 5000 条。</p>
   </form>
 </section>
 

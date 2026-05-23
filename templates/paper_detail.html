@@ -1,96 +1,118 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="page-head">
-  <div>
-    <p class="eyebrow">单篇论文详情与分析</p>
-    <h1>{{ paper.title }}</h1>
-    <div class="head-meta">
-      <span class="status-chip">{{ paper.source or "来源未知" }}</span>
-      <span>{{ paper.year or "年份未知" }}</span>
-      <span>引用 {{ paper.citation_count or 0 }}</span>
-      {% if paper.journal %}<span>{{ paper.journal }}</span>{% endif %}
-    </div>
+<section class="detail-hero">
+  <div class="detail-hero-top">
+    <span class="eyebrow">单篇论文详情与分析</span>
+    <a class="button secondary" href="{{ back_url }}">← 返回检索结果</a>
   </div>
-  <a class="button secondary" href="{{ back_url }}">返回检索结果</a>
+  <h1 class="detail-title">{{ paper.title }}</h1>
+  <div class="detail-hero-meta">
+    <span class="status-chip">{{ paper.source or "来源未知" }}</span>
+    <span class="meta-chip">{{ paper.year or "年份未知" }}</span>
+    <span class="meta-chip meta-chip-accent">引用 {{ paper.citation_count or 0 }}</span>
+    {% if paper.journal %}<span class="meta-chip">{{ paper.journal }}</span>{% endif %}
+  </div>
+  {% if paper.authors %}
+    <p class="detail-authors">{{ paper.authors|join("、") }}</p>
+  {% endif %}
+  <div class="detail-hero-foot">
+    <span class="detail-doi"><strong>DOI</strong>{{ paper.doi or "暂无 DOI" }}</span>
+    {% if paper.url %}
+      <a class="text-link" href="{{ paper.url }}" target="_blank" rel="noreferrer">查看原文链接 →</a>
+    {% endif %}
+  </div>
 </section>
 
-<section class="paper-list">
-  <article class="paper-card">
-    <div class="paper-main">
-      {% if paper.authors %}
-        <p class="authors"><strong>作者：</strong>{{ paper.authors|join("、") }}</p>
-      {% endif %}
-      <p class="doi"><strong>DOI：</strong>{{ paper.doi or "暂无 DOI" }}</p>
-      {% if paper.url %}
-        <p><a class="text-link" href="{{ paper.url }}" target="_blank" rel="noreferrer">查看原文链接</a></p>
-      {% endif %}
-      {% if paper.abstract %}
-        <h3>摘要</h3>
-        <p>{{ paper.abstract }}</p>
-      {% else %}
-        <p class="muted">该论文未提供摘要。</p>
-      {% endif %}
-      {% if paper.keywords %}
-        <h3>关键词</h3>
-        <div class="tag-row">
-          {% for word in paper.keywords %}
-            <span>{{ word }}</span>
-          {% endfor %}
-        </div>
-      {% endif %}
-    </div>
+<section class="detail-grid">
+  <article class="detail-card detail-abstract">
+    <header class="detail-card-head">
+      <span class="detail-card-kicker">Abstract</span>
+      <h2>摘要</h2>
+    </header>
+    {% if paper.abstract %}
+      <p class="detail-card-body">{{ paper.abstract }}</p>
+    {% else %}
+      <p class="muted">该论文未提供摘要。</p>
+    {% endif %}
+  </article>
+
+  <article class="detail-card detail-keywords">
+    <header class="detail-card-head">
+      <span class="detail-card-kicker">Keywords</span>
+      <h2>关键词</h2>
+    </header>
+    {% if paper.keywords %}
+      <div class="tag-row">
+        {% for word in paper.keywords %}
+          <span>{{ word }}</span>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">该论文未提供关键词。</p>
+    {% endif %}
   </article>
 </section>
 
 {% if cohort_stats and cohort_stats.cohort_size > 1 %}
-<section class="analysis-cta" style="flex-direction: column; align-items: stretch;">
-  <div>
-    <p class="eyebrow">本次检索集合中的位置</p>
-    <h2>共 {{ cohort_stats.cohort_size }} 篇论文中的对比分析</h2>
-  </div>
-  <div class="hero-mini-metrics" style="margin-top: 16px;">
-    <div>
-      <strong>第 {{ cohort_stats.citation_rank }} / {{ cohort_stats.cohort_size }}</strong>
+<section class="detail-card cohort-card">
+  <header class="detail-card-head">
+    <span class="detail-card-kicker">Position in cohort</span>
+    <h2>本次检索集合中的位置（共 {{ cohort_stats.cohort_size }} 篇）</h2>
+  </header>
+
+  <div class="cohort-stats-grid">
+    <div class="cohort-stat cohort-stat-blue">
       <span>引用排位</span>
+      <strong>第 {{ cohort_stats.citation_rank }} / {{ cohort_stats.cohort_size }}</strong>
     </div>
-    <div>
-      <strong>{{ cohort_stats.same_year_count }} 篇</strong>
+    <div class="cohort-stat cohort-stat-green">
       <span>同年论文数</span>
+      <strong>{{ cohort_stats.same_year_count }} 篇</strong>
     </div>
-    <div>
-      <strong>{{ cohort_stats.citation_target }}</strong>
+    <div class="cohort-stat cohort-stat-amber">
       <span>本论文引用</span>
+      <strong>{{ cohort_stats.citation_target }}</strong>
     </div>
-    <div>
-      <strong>{{ cohort_stats.citation_median }}</strong>
+    <div class="cohort-stat cohort-stat-rose">
       <span>集合中位引用</span>
+      <strong>{{ cohort_stats.citation_median }}</strong>
     </div>
-    <div>
-      <strong>{{ cohort_stats.citation_max }}</strong>
+    <div class="cohort-stat cohort-stat-purple">
       <span>集合最高引用</span>
+      <strong>{{ cohort_stats.citation_max }}</strong>
     </div>
   </div>
+
   {% if cohort_stats.citation_max > 0 %}
     {% set target_pct = (cohort_stats.citation_target / cohort_stats.citation_max * 100)|round(1) %}
     {% set median_pct = (cohort_stats.citation_median / cohort_stats.citation_max * 100)|round(1) %}
-    <div style="margin-top: 16px; display: grid; gap: 10px;">
-      <div>
-        <p class="muted" style="margin-bottom: 4px;">本论文引用</p>
-        <div style="background: rgba(99,102,241,0.12); height: 14px; border-radius: 8px; overflow: hidden;">
-          <div style="background: #6366f1; height: 100%; width: {{ target_pct }}%;"></div>
+    <div class="citation-bars">
+      <div class="citation-bar">
+        <div class="citation-bar-head">
+          <span class="citation-bar-label">本论文引用</span>
+          <span class="citation-bar-value">{{ cohort_stats.citation_target }}</span>
+        </div>
+        <div class="citation-bar-track">
+          <div class="citation-bar-fill citation-bar-fill-target" style="width: {{ target_pct }}%;"></div>
         </div>
       </div>
-      <div>
-        <p class="muted" style="margin-bottom: 4px;">集合中位</p>
-        <div style="background: rgba(20,184,166,0.12); height: 14px; border-radius: 8px; overflow: hidden;">
-          <div style="background: #14b8a6; height: 100%; width: {{ median_pct }}%;"></div>
+      <div class="citation-bar">
+        <div class="citation-bar-head">
+          <span class="citation-bar-label">集合中位</span>
+          <span class="citation-bar-value">{{ cohort_stats.citation_median }}</span>
+        </div>
+        <div class="citation-bar-track">
+          <div class="citation-bar-fill citation-bar-fill-median" style="width: {{ median_pct }}%;"></div>
         </div>
       </div>
-      <div>
-        <p class="muted" style="margin-bottom: 4px;">集合最高</p>
-        <div style="background: rgba(245,158,11,0.12); height: 14px; border-radius: 8px; overflow: hidden;">
-          <div style="background: #f59e0b; height: 100%; width: 100%;"></div>
+      <div class="citation-bar">
+        <div class="citation-bar-head">
+          <span class="citation-bar-label">集合最高</span>
+          <span class="citation-bar-value">{{ cohort_stats.citation_max }}</span>
+        </div>
+        <div class="citation-bar-track">
+          <div class="citation-bar-fill citation-bar-fill-max" style="width: 100%;"></div>
         </div>
       </div>
     </div>
@@ -98,35 +120,33 @@
 </section>
 {% endif %}
 
-<section class="page-head" style="margin-top: 32px;">
+<section class="detail-section-title">
   <div>
-    <p class="eyebrow">相关推荐</p>
-    <h2>结合关键词、引用和新鲜度推荐的相关论文</h2>
+    <span class="eyebrow">相关推荐</span>
+    <h2>结合关键词相似度、引用得分和年份新鲜度推荐</h2>
   </div>
 </section>
 
-<section class="paper-list">
+<section class="recommend-grid">
   {% for item in recommendations %}
-    <article class="paper-card">
-      <div class="paper-main">
-        <div class="paper-topline">
-          <span>综合得分 {{ item.score }}</span>
-          <span>关键词 {{ item.keyword_score }}</span>
-          <span>引用 {{ item.citation_score }}</span>
-          <span>新鲜度 {{ item.freshness_score }}</span>
-        </div>
-        <h2>{{ item.paper.title }}</h2>
-        <p class="meta">{{ item.paper.year or "年份未知" }} · {{ item.paper.journal or "来源未知" }}</p>
-        {% if item.paper.authors %}
-          <p class="authors">{{ item.paper.authors[:4]|join("、") }}</p>
-        {% endif %}
-        <p class="doi">{{ item.paper.doi or "暂无 DOI" }}</p>
+    <article class="recommend-card">
+      <div class="recommend-scores">
+        <span class="score-pill score-pill-main">综合 {{ item.score }}</span>
+        <span class="score-pill">关键词 {{ item.keyword_score }}</span>
+        <span class="score-pill">引用 {{ item.citation_score }}</span>
+        <span class="score-pill">新鲜度 {{ item.freshness_score }}</span>
       </div>
-      <div class="paper-actions">
+      <h3 class="recommend-title">{{ item.paper.title }}</h3>
+      <p class="recommend-meta">{{ item.paper.year or "年份未知" }} · {{ item.paper.journal or "来源未知" }}</p>
+      {% if item.paper.authors %}
+        <p class="recommend-authors">{{ item.paper.authors[:4]|join("、") }}</p>
+      {% endif %}
+      <p class="recommend-doi">{{ item.paper.doi or "暂无 DOI" }}</p>
+      <div class="recommend-actions">
         {% if item.paper.url %}
           <a class="text-link" href="{{ item.paper.url }}" target="_blank" rel="noreferrer">原文链接</a>
         {% endif %}
-        <a class="button secondary" href="{{ url_for('paper_detail', paper_id=item.paper.id, ids=paper_ids, query=query) }}">查看该论文详情</a>
+        <a class="button secondary" href="{{ url_for('paper_detail', paper_id=item.paper.id, ids=paper_ids, query=query) }}">查看详情</a>
       </div>
     </article>
   {% else %}

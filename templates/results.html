@@ -11,7 +11,8 @@
     </div>
   </div>
   <div class="actions">
-    <a class="button secondary" href="{{ export_url }}">导出本次 CSV</a>
+    <a class="button" href="{{ analysis_url }}" data-action-link>查看整体分析</a>
+    <a class="button secondary" href="{{ export_url }}" data-action-link>导出本次 CSV</a>
   </div>
 </section>
 
@@ -23,32 +24,27 @@
 {% endif %}
 
 {% if papers %}
-<section class="filter-bar" style="background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px;">
-  <select id="filter-sort" title="排序方式" style="padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: 13px;">
-    <option value="relevance">相关度</option>
+<section class="filter-bar">
+  <input type="number" id="filter-min-citations" min="0" value="0" placeholder="最低引用" title="最低引用次数">
+  <input type="number" id="filter-year-from" min="1900" max="2030" placeholder="年份从" title="年份从">
+  <input type="number" id="filter-year-to" min="1900" max="2030" placeholder="年份到" title="年份到">
+  <input type="text" id="filter-keyword" placeholder="关键词二次过滤">
+  <select id="filter-sort" title="排序方式" class="filter-sort">
+    <option value="relevance">按相关度</option>
     <option value="citations-desc">引用 高→低</option>
     <option value="citations-asc">引用 低→高</option>
     <option value="year-desc">年份 新→旧</option>
     <option value="year-asc">年份 旧→新</option>
     <option value="title-asc">标题 A→Z</option>
   </select>
-  <input type="number" id="filter-min-citations" min="0" value="0" placeholder="最低引用" title="最低引用次数" style="width: 90px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; font-size: 13px;">
-  <input type="number" id="filter-year-from" min="1900" max="2030" placeholder="年份从" title="年份从" style="width: 84px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; font-size: 13px;">
-  <input type="number" id="filter-year-to" min="1900" max="2030" placeholder="年份到" title="年份到" style="width: 84px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; font-size: 13px;">
-  <select id="filter-source" title="来源" style="padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: 13px;">
-    <option value="">全部来源</option>
-    <option value="openalex">openalex</option>
-    <option value="crossref">crossref</option>
-    <option value="arxiv">arxiv</option>
-  </select>
-  <input type="text" id="filter-keyword" placeholder="关键词二次过滤" style="flex: 1; min-width: 160px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; font-size: 13px;">
-  <button type="button" id="filter-reset" style="padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-soft); cursor: pointer; color: var(--muted); font-size: 13px;">重置</button>
+  <button type="button" id="filter-reset">重置</button>
 </section>
 {% endif %}
 
 <section class="paper-list" id="paper-list">
   {% for paper in papers %}
     <article class="paper-card"
+             data-paper-id="{{ paper.id }}"
              data-year="{{ paper.year or 0 }}"
              data-citations="{{ paper.citation_count or 0 }}"
              data-relevance="{{ paper.relevance_score or 0 }}"
@@ -89,12 +85,12 @@
 
 {% if papers %}
 <section class="analysis-cta">
-  <div>
-    <p class="eyebrow">整体分析</p>
-    <h2>对本次检索全部 {{ papers|length }} 篇论文做整体分析</h2>
-    <p class="muted">查看年度趋势、关键词分布、引用分布、作者合作网络和趋势摘要。整体分析始终基于全部加载的论文，不受上面的筛选条件影响。</p>
+  <div class="analysis-cta-text">
+    <span class="analysis-cta-kicker">整体分析</span>
+    <h2 id="cta-heading">对本次检索全部 <span id="cta-count">{{ papers|length }}</span> 篇论文做整体分析</h2>
+    <p class="muted">年度趋势、关键词分布、引用分布、期刊作者排行、合作网络、自动洞察等 8 张图表。分析对象会跟随上方筛选实时变化——筛选后只分析当前显示的论文。</p>
   </div>
-  <a class="button" href="{{ analysis_url }}">查看整体分析</a>
+  <a class="button analysis-cta-button" href="{{ analysis_url }}" data-action-link>查看整体分析 →</a>
 </section>
 
 <script>
@@ -109,42 +105,64 @@
   const yearFromInput = document.getElementById("filter-year-from");
   const yearToInput = document.getElementById("filter-year-to");
   const keywordInput = document.getElementById("filter-keyword");
-  const sourceSelect = document.getElementById("filter-source");
   const resetBtn = document.getElementById("filter-reset");
   const counter = document.getElementById("match-counter");
+  const ctaCount = document.getElementById("cta-count");
+  const ctaHeading = document.getElementById("cta-heading");
+  const actionLinks = Array.from(document.querySelectorAll("[data-action-link]"));
   const totalCount = cards.length;
 
-  // Stash original order for "relevance" sort
+  // Stash original order for "relevance" sort and original hrefs for filter-aware rewriting
   cards.forEach((card, idx) => { card.dataset.originalIndex = idx; });
+  actionLinks.forEach((link) => { link.dataset.originalHref = link.getAttribute("href"); });
+
+  function updateActionLinks(visibleIds) {
+    const idsParam = visibleIds.join(",");
+    actionLinks.forEach((link) => {
+      try {
+        const url = new URL(link.dataset.originalHref, window.location.origin);
+        url.searchParams.set("ids", idsParam);
+        link.setAttribute("href", url.pathname + url.search);
+      } catch (e) {
+        // fallback: regex replace ids= in original href
+        const replaced = link.dataset.originalHref.replace(/([?&])ids=[^&]*/, `$1ids=${idsParam}`);
+        link.setAttribute("href", replaced);
+      }
+    });
+  }
 
   function applyFilters() {
     const minCit = parseInt(minCitInput.value, 10) || 0;
     const yearFrom = parseInt(yearFromInput.value, 10) || null;
     const yearTo = parseInt(yearToInput.value, 10) || null;
     const keyword = (keywordInput.value || "").trim().toLowerCase();
-    const source = sourceSelect.value;
 
-    let visibleCount = 0;
+    const visibleIds = [];
     cards.forEach((card) => {
       const year = parseInt(card.dataset.year, 10) || 0;
       const citations = parseInt(card.dataset.citations, 10) || 0;
-      const cardSource = card.dataset.source || "";
       const text = card.dataset.searchText || "";
 
       let visible = true;
       if (citations < minCit) visible = false;
       if (yearFrom && (year === 0 || year < yearFrom)) visible = false;
       if (yearTo && (year === 0 || year > yearTo)) visible = false;
-      if (source && cardSource !== source) visible = false;
       if (keyword && !text.includes(keyword)) visible = false;
 
       card.style.display = visible ? "" : "none";
-      if (visible) visibleCount += 1;
+      if (visible && card.dataset.paperId) visibleIds.push(card.dataset.paperId);
     });
 
+    const visibleCount = visibleIds.length;
     if (counter) {
       counter.textContent = `匹配 ${visibleCount} / ${totalCount} 条`;
     }
+    if (ctaCount) ctaCount.textContent = visibleCount;
+    if (ctaHeading) {
+      ctaHeading.firstChild.textContent =
+        visibleCount === totalCount ? "对本次检索全部 " : "对筛选后的 ";
+    }
+    updateActionLinks(visibleIds);
   }
 
   function applySort() {
@@ -178,7 +196,7 @@
     applyFilters();
   }
 
-  [sortSelect, minCitInput, yearFromInput, yearToInput, sourceSelect].forEach((el) => {
+  [sortSelect, minCitInput, yearFromInput, yearToInput].forEach((el) => {
     el && el.addEventListener("change", refresh);
   });
   keywordInput && keywordInput.addEventListener("input", applyFilters);
@@ -188,7 +206,6 @@
     yearFromInput.value = "";
     yearToInput.value = "";
     keywordInput.value = "";
-    sourceSelect.value = "";
     refresh();
   });
 

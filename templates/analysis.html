@@ -92,12 +92,58 @@
 
 <section class="chart-grid pro-chart-grid">
   {% for chart in charts %}
-    <figure class="chart">
+    <figure class="chart chart-zoomable">
       <figcaption>{{ chart.title }}</figcaption>
       <img src="{{ url_for('static', filename='charts/' ~ chart.image) }}" alt="{{ chart.title }}">
+      <span class="chart-zoom-hint" aria-hidden="true">⤢ 放大</span>
     </figure>
   {% endfor %}
 </section>
+
+<div id="chart-lightbox" class="chart-lightbox" hidden>
+  <button class="chart-lightbox-close" type="button" aria-label="关闭">×</button>
+  <img class="chart-lightbox-img" alt="">
+  <p class="chart-lightbox-caption"></p>
+</div>
+
+<script>
+(function () {
+  const lb = document.getElementById("chart-lightbox");
+  if (!lb) return;
+  const lbImg = lb.querySelector(".chart-lightbox-img");
+  const lbCap = lb.querySelector(".chart-lightbox-caption");
+  const closeBtn = lb.querySelector(".chart-lightbox-close");
+
+  function open(src, caption) {
+    lbImg.src = src;
+    lbCap.textContent = caption || "";
+    lb.hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+  function close() {
+    lb.hidden = true;
+    lbImg.removeAttribute("src");
+    document.body.style.overflow = "";
+  }
+
+  document.querySelectorAll(".chart-zoomable").forEach((fig) => {
+    fig.addEventListener("click", () => {
+      const img = fig.querySelector("img");
+      const cap = fig.querySelector("figcaption")?.textContent || "";
+      if (img) open(img.src, cap);
+    });
+  });
+
+  closeBtn.addEventListener("click", close);
+  lb.addEventListener("click", (e) => {
+    if (e.target === closeBtn) return;
+    close();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !lb.hidden) close();
+  });
+})();
+</script>
 
 <section class="data-grid">
   <div class="panel">
