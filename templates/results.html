@@ -8,11 +8,25 @@
     <div class="head-meta">
       <span class="status-chip">{{ source_label }}</span>
       <span>{{ papers|length }} 条论文记录</span>
-      <span>按相关性优先排序</span>
+      {% if filters and filters.year_from and filters.year_to %}
+        <span class="status-chip">年份 {{ filters.year_from }}-{{ filters.year_to }}</span>
+      {% elif filters and filters.year_from %}
+        <span class="status-chip">年份 ≥ {{ filters.year_from }}</span>
+      {% elif filters and filters.year_to %}
+        <span class="status-chip">年份 ≤ {{ filters.year_to }}</span>
+      {% endif %}
+      {% if filters and filters.min_citations %}
+        <span class="status-chip">引用 ≥ {{ filters.min_citations }}</span>
+      {% endif %}
+      {% if filters and filters.concept %}
+        <span class="status-chip">学科：{{ filters.concept }}</span>
+      {% endif %}
+      {% if sort_label %}
+        <span class="status-chip">{{ sort_label }}</span>
+      {% endif %}
     </div>
   </div>
   <div class="actions">
-    <a class="button" href="{{ analysis_url }}">分析本次结果</a>
     <a class="button secondary" href="{{ export_url }}">导出本次 CSV</a>
   </div>
 </section>
@@ -29,8 +43,6 @@
     <article class="paper-card">
       <div class="paper-main">
         <div class="paper-topline">
-          <span class="score-chip">相关性 {{ paper.relevance_score or 0 }}</span>
-          <span>综合分 {{ paper.rank_score or 0 }}</span>
           <span>{{ paper.year or "年份未知" }}</span>
           <span>{{ paper.source or "来源未知" }}</span>
           <span>引用 {{ paper.citation_count or 0 }}</span>
@@ -53,11 +65,22 @@
         {% if paper.url %}
           <a class="text-link" href="{{ paper.url }}" target="_blank" rel="noreferrer">原文链接</a>
         {% endif %}
-        <a class="button secondary" href="{{ url_for('recommend', paper_id=paper.id, ids=paper_ids, query=query) }}">推荐相关论文</a>
+        <a class="button secondary" href="{{ url_for('paper_detail', paper_id=paper.id, ids=paper_ids, query=query) }}">查看详情与分析</a>
       </div>
     </article>
   {% else %}
     <div class="empty">暂未找到论文。可以换一个英文关键词，或稍后重新调用学术 API。</div>
   {% endfor %}
 </section>
+
+{% if papers %}
+<section class="analysis-cta">
+  <div>
+    <p class="eyebrow">整体分析</p>
+    <h2>对本次检索全部 {{ papers|length }} 篇论文做整体分析</h2>
+    <p class="muted">查看年度趋势、关键词分布、引用分布、作者合作网络和趋势摘要。</p>
+  </div>
+  <a class="button" href="{{ analysis_url }}">查看整体分析</a>
+</section>
+{% endif %}
 {% endblock %}

@@ -13,6 +13,9 @@ ARXIV_API = "https://export.arxiv.org/api/query"
 OPENALEX_API = "https://api.openalex.org/works"
 
 DEFAULT_LIMIT = 20
+MAX_LIMIT_PER_PAGE = 200
+MAX_TOTAL_RESULTS = 1000
+SORT_OPTIONS = ("relevance", "citations", "recent")
 APP_TITLE = "学术论文元数据分析工具"
 
 STOPWORDS = {

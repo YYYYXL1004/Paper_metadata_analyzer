@@ -2,11 +2,30 @@ import time
 
 import requests
 
-from config import ARXIV_API, CROSSREF_API, DEFAULT_LIMIT, OPENALEX_API
+from config import (
+    ARXIV_API,
+    CROSSREF_API,
+    DEFAULT_LIMIT,
+    MAX_LIMIT_PER_PAGE,
+    OPENALEX_API,
+)
 
 
 HEADERS = {
     "User-Agent": "PaperMetadataAnalyzer/1.0 (mailto:student@example.com)"
+}
+
+
+OPENALEX_SORT_MAP = {
+    "relevance": None,
+    "citations": "cited_by_count:desc",
+    "recent": "publication_date:desc",
+}
+
+CROSSREF_SORT_MAP = {
+    "relevance": ("relevance", "desc"),
+    "citations": ("is-referenced-by-count", "desc"),
+    "recent": ("published", "desc"),
 }
 
 
@@ -29,7 +48,23 @@ def get_with_retry(url, params=None, timeout=(6, 30), attempts=3):
     raise last_error
 
 
-def fetch_crossref(query, rows=DEFAULT_LIMIT, sort=None, order="desc"):
+def build_openalex_filter(year_from=None, year_to=None, min_citations=0, concept=None):
+    clauses = []
+    if year_from:
+        clauses.append(f"from_publication_date:{int(year_from)}-01-01")
+    if year_to:
+        clauses.append(f"to_publication_date:{int(year_to)}-12-31")
+    if min_citations and int(min_citations) > 0:
+        # OpenAlex supports `>` but not `>=`; subtract 1 to make it inclusive.
+        clauses.append(f"cited_by_count:>{int(min_citations) - 1}")
+    if concept:
+        concept_clean = str(concept).strip().replace(",", " ")
+        if concept_clean:
+            clauses.append(f"concepts.display_name.search:{concept_clean}")
+    return ",".join(clauses) if clauses else None
+
+
+def fetch_crossref(query, rows=DEFAULT_LIMIT, sort=None, order="desc", year_from=None, year_to=None):
     params = {
         "query": query,
         "rows": rows,
@@ -38,13 +73,25 @@ def fetch_crossref(query, rows=DEFAULT_LIMIT, sort=None, order="desc"):
     if sort:
         params["sort"] = sort
         params["order"] = order
+    filter_clauses = []
+    if year_from:
+        filter_clauses.append(f"from-pub-date:{int(year_from)}-01-01")
+    if year_to:
+        filter_clauses.append(f"until-pub-date:{int(year_to)}-12-31")
+    if filter_clauses:
+        params["filter"] = ",".join(filter_clauses)
     response = get_with_retry(CROSSREF_API, params=params, timeout=(6, 30), attempts=3)
     return response.json()
 
 
-def fetch_arxiv(query, rows=DEFAULT_LIMIT):
+def fetch_arxiv(query, rows=DEFAULT_LIMIT, year_from=None, year_to=None):
+    search_query = f"all:{query}"
+    if year_from or year_to:
+        start = f"{int(year_from)}01010000" if year_from else "190001010000"
+        end = f"{int(year_to)}12312359" if year_to else "203012312359"
+        search_query = f"{search_query} AND submittedDate:[{start} TO {end}]"
     params = {
-        "search_query": f"all:{query}",
+        "search_query": search_query,
         "start": 0,
         "max_results": rows,
         "sortBy": "submittedDate",
@@ -54,17 +101,68 @@ def fetch_arxiv(query, rows=DEFAULT_LIMIT):
     return response.text
 
 
-def fetch_openalex(query, rows=DEFAULT_LIMIT, sort=None):
+def fetch_openalex(
+    query,
+    rows=DEFAULT_LIMIT,
+    sort=None,
+    year_from=None,
+    year_to=None,
+    min_citations=0,
+    concept=None,
+    cursor=None,
+):
+    per_page = min(int(rows), MAX_LIMIT_PER_PAGE)
     params = {
         "search": query,
-        "per-page": rows,
+        "per-page": per_page,
         "mailto": "student@example.com",
         "select": "id,doi,display_name,publication_year,primary_location,authorships,cited_by_count,abstract_inverted_index,concepts",
     }
     if sort:
         params["sort"] = sort
+    filter_expr = build_openalex_filter(year_from, year_to, min_citations, concept)
+    if filter_expr:
+        params["filter"] = filter_expr
+    if cursor:
+        params["cursor"] = cursor
     response = get_with_retry(OPENALEX_API, params=params, timeout=(6, 30), attempts=3)
     return response.json()
+
+
+def fetch_openalex_paged(
+    query,
+    total_rows,
+    sort=None,
+    year_from=None,
+    year_to=None,
+    min_citations=0,
+    concept=None,
+):
+    """Fetch up to total_rows OpenAlex works via cursor pagination."""
+    collected = []
+    cursor = "*"
+    remaining = int(total_rows)
+    while remaining > 0 and cursor:
+        page_size = min(remaining, MAX_LIMIT_PER_PAGE)
+        data = fetch_openalex(
+            query,
+            rows=page_size,
+            sort=sort,
+            year_from=year_from,
+            year_to=year_to,
+            min_citations=min_citations,
+            concept=concept,
+            cursor=cursor,
+        )
+        results = data.get("results", []) or []
+        if not results:
+            break
+        collected.extend(results)
+        remaining -= len(results)
+        cursor = (data.get("meta") or {}).get("next_cursor")
+        if not cursor:
+            break
+    return {"results": collected}
 
 
 def demo_papers():

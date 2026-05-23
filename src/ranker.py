@@ -158,9 +158,11 @@ def rank_papers(query, papers, limit=None):
         enriched["rank_score"] = round(rank_score, 2)
         ranked.append(enriched)
 
-    positive_relevance = [paper for paper in ranked if paper.get("relevance_score", 0) > 0]
-    if positive_relevance:
-        ranked = positive_relevance
+    positive_relevance_count = sum(1 for paper in ranked if paper.get("relevance_score", 0) > 0)
+    if positive_relevance_count > 0:
+        for paper in ranked:
+            if paper.get("relevance_score", 0) == 0:
+                paper["rank_score"] = round(paper.get("rank_score", 0) * 0.35, 2)
 
     ranked.sort(
         key=lambda paper: (
