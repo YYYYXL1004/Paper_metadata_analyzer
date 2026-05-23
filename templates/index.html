@@ -54,35 +54,7 @@
       </label>
       <label>
         数量上限
-        <input type="number" name="limit" min="3" max="200" value="20">
-      </label>
-    </div>
-    <div class="form-row">
-      <label>
-        年份从
-        <input type="number" name="year_from" min="1900" max="2030" placeholder="例如 2020">
-      </label>
-      <label>
-        年份到
-        <input type="number" name="year_to" min="1900" max="2030" placeholder="例如 2025">
-      </label>
-      <label>
-        最低引用次数
-        <input type="number" name="min_citations" min="0" value="0">
-      </label>
-    </div>
-    <div class="form-row">
-      <label>
-        排序
-        <select name="sort">
-          <option value="relevance">相关度优先</option>
-          <option value="citations">引用最高</option>
-          <option value="recent">最新发表</option>
-        </select>
-      </label>
-      <label>
-        学科 / Concept 关键词（可选）
-        <input type="text" name="concept" placeholder="例如 machine learning">
+        <input type="number" name="limit" min="3" max="5000" value="100">
       </label>
     </div>
     <label class="checkline">
@@ -90,7 +62,7 @@
       优先使用本地真实 API 缓存
     </label>
     <button type="submit">调用 API 检索论文</button>
-    <p class="form-hint">数量上限提升到 200（OpenAlex 自动分页）；可按年份范围、最低引用、学科 Concept 进一步筛选。CrossRef 不支持引用过滤时由后端兜底过滤。</p>
+    <p class="form-hint">OpenAlex 通过 cursor 自动分页（每页 200），最多可一次拉取 5000 条。常用 100-500 条够用，再到结果页二次筛选。</p>
   </form>
 </section>
 

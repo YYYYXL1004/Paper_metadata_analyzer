@@ -64,10 +64,12 @@ def normalize_limit(value):
         limit = int(value or DEFAULT_LIMIT)
     except (TypeError, ValueError):
         return DEFAULT_LIMIT
-    return max(1, min(MAX_LIMIT_PER_PAGE, limit))
+    return max(1, min(MAX_TOTAL_RESULTS, limit))
 
 
 def candidate_limit(limit):
+    if limit >= 100:
+        return min(MAX_TOTAL_RESULTS, limit)
     return min(MAX_TOTAL_RESULTS, max(limit * 3, 60))
 
 
