@@ -57,6 +57,8 @@ python app.py
 
 若 OpenAlex 或 arXiv 网络超时，系统会自动回退到 CrossRef；若远程 API 全部不可用，则使用本地真实 API 缓存，不会把演示数据伪装成检索结果。
 
+> 注：首次运行会自动创建 `data/papers.db` 与 `exports/` 目录用于本地缓存与 CSV 导出，这两个目录已加入 `.gitignore`，不会被纳入版本控制。
+
 ## 四、功能截图
 
 ### 1. 论文检索首页
@@ -79,10 +81,10 @@ Paper_metadata_analyzer/
 ├─ config.py               # 路径、API 地址、上限和默认参数配置
 ├─ requirements.txt        # 第三方依赖
 ├─ README.md               # 项目说明文档
-├─ data/
-│  └─ papers.db            # SQLite 数据库，运行后自动生成
-├─ exports/
-│  └─ papers.csv           # CSV 导出文件，运行后自动生成
+├─ data/                   # SQLite 数据库目录（运行时自动生成，已被 .gitignore 忽略）
+│  └─ papers.db            # 检索结果本地缓存
+├─ exports/                # CSV 导出目录（运行时自动生成）
+│  └─ papers.csv           # 单次检索结果的 CSV 导出
 ├─ docs/
 │  └─ screenshots/         # README 功能截图
 ├─ static/
