@@ -128,6 +128,18 @@ def filters_for_url(filters):
     return out
 
 
+def search_context_args(query, source, limit, filters, ids=None):
+    args = {
+        "query": query,
+        "source": source,
+        "limit": limit,
+        **filters_for_url(filters),
+    }
+    if ids:
+        args["ids"] = ids
+    return args
+
+
 def apply_min_citations_filter(papers, min_citations):
     if not min_citations:
         return papers
@@ -388,7 +400,7 @@ def search():
         query, source, limit, use_cache=use_cache, filters=filters
     )
     paper_ids = paper_ids_for_url(papers)
-    url_filters = filters_for_url(filters)
+    context_args = search_context_args(query, source, limit, filters, paper_ids)
 
     return render_template(
         "results.html",
@@ -401,16 +413,9 @@ def search():
         error=error,
         filters=filters,
         sort_label=SORT_LABELS.get(filters.get("sort", "relevance"), ""),
-        analysis_url=url_for(
-            "analysis",
-            ids=paper_ids,
-            query=query,
-            source=source,
-            limit=limit,
-            **url_filters,
-        ),
-        export_url=url_for("export", ids=paper_ids, query=query),
-        paper_detail_query=query,
+        analysis_url=url_for("analysis", **context_args),
+        export_url=url_for("export", **context_args),
+        context_args=context_args,
     )
 
 
@@ -447,6 +452,7 @@ def analysis():
         analysis_title = f"“{query}”本次检索共 {stats['total']} 篇论文"
     else:
         analysis_title = f"当前分析数据集共 {stats['total']} 篇论文"
+    context_args = search_context_args(query, source, limit, filters, ids_param)
 
     return render_template(
         "analysis.html",
@@ -461,9 +467,8 @@ def analysis():
         analysis_title=analysis_title,
         status_message=status_message,
         error=error,
-        export_url=url_for("export", ids=ids_param, query=query)
-        if ids_param or query
-        else url_for("index"),
+        context_args=context_args,
+        export_url=url_for("export", **context_args) if ids_param or query else url_for("index"),
     )
 
 
@@ -473,7 +478,9 @@ def paper_detail(paper_id):
     if not target:
         return redirect(url_for("index"))
     query = request.args.get("query", "").strip()
+    source = normalize_source(request.args.get("source", "openalex"))
     limit = normalize_limit(request.args.get("limit"))
+    filters = collect_filters(request.args.get)
     paper_ids = parse_paper_ids(request.args.get("ids", ""))
     if paper_ids:
         cohort = get_papers_by_ids(paper_ids)
@@ -484,6 +491,7 @@ def paper_detail(paper_id):
     recommendations = recommend_by_paper(target, cohort)
     cohort_stats = compute_cohort_position(target, cohort)
     ids_param = paper_ids_for_url(cohort) if paper_ids else ""
+    context_args = search_context_args(query, source, limit, filters, ids_param)
     return render_template(
         "paper_detail.html",
         paper=target,
@@ -492,7 +500,8 @@ def paper_detail(paper_id):
         recommendations=recommendations,
         query=query,
         paper_ids=ids_param,
-        back_url=url_for("search", query=query) if query else url_for("index"),
+        context_args=context_args,
+        back_url=url_for("search", **context_args) if query else url_for("index"),
     )
 
 
@@ -500,7 +509,9 @@ def paper_detail(paper_id):
 def recommend(paper_id):
     target = get_paper(paper_id)
     query = request.args.get("query", "").strip()
+    source = normalize_source(request.args.get("source", "openalex"))
     limit = normalize_limit(request.args.get("limit"))
+    filters = collect_filters(request.args.get)
     paper_ids = parse_paper_ids(request.args.get("ids", ""))
     if paper_ids:
         papers = get_papers_by_ids(paper_ids)
@@ -510,13 +521,13 @@ def recommend(paper_id):
         papers = [target] if target else []
     ids_param = paper_ids_for_url(papers)
     recommendations = recommend_by_paper(target, papers)
+    context_args = search_context_args(query, source, limit, filters, ids_param)
     return render_template(
         "recommend.html",
         target=target,
         recommendations=recommendations,
-        back_url=url_for("analysis", ids=ids_param, query=query)
-        if ids_param or query
-        else url_for("index"),
+        context_args=context_args,
+        back_url=url_for("analysis", **context_args) if ids_param or query else url_for("index"),
     )
 
 

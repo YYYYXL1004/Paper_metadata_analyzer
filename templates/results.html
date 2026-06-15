@@ -75,7 +75,7 @@
         {% if paper.url %}
           <a class="text-link" href="{{ paper.url }}" target="_blank" rel="noreferrer">原文链接</a>
         {% endif %}
-        <a class="button secondary" href="{{ url_for('paper_detail', paper_id=paper.id, ids=paper_ids, query=query) }}">查看详情与分析</a>
+        <a class="button secondary" href="{{ url_for('paper_detail', paper_id=paper.id, **context_args) }}">查看详情与分析</a>
       </div>
     </article>
   {% else %}
