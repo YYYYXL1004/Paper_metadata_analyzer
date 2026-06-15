@@ -219,8 +219,8 @@ def fetch_real_papers(query, source, limit, filters=None):
                     concept=concept,
                 )
                 papers.extend(parse_openalex_response(cited_raw))
-            except Exception:
-                pass
+            except Exception as exc:
+                app.logger.warning("OpenAlex citation supplement failed: %s", exc)
         return rank_papers(query, papers, limit=limit)
 
     # crossref
@@ -245,8 +245,8 @@ def fetch_real_papers(query, source, limit, filters=None):
                 year_to=year_to,
             )
             papers.extend(parse_crossref_response(cited_raw))
-        except Exception:
-            pass
+        except Exception as exc:
+            app.logger.warning("CrossRef citation supplement failed: %s", exc)
     try:
         openalex_raw = fetch_openalex_paged(
             query,
@@ -257,8 +257,8 @@ def fetch_real_papers(query, source, limit, filters=None):
             concept=concept,
         )
         papers.extend(parse_openalex_response(openalex_raw))
-    except Exception:
-        pass
+    except Exception as exc:
+        app.logger.warning("OpenAlex supplement for CrossRef search failed: %s", exc)
     papers = apply_min_citations_filter(papers, min_citations)
     return rank_papers(query, papers, limit=limit)
 
