@@ -254,7 +254,7 @@ def fetch_real_papers(query, source, limit, filters=None):
 def load_or_fetch(query, source, limit, use_cache=False, filters=None):
     source = normalize_source(source)
     if use_cache:
-        cached = cached_query(query, include_demo=False)
+        cached = cached_query(query, include_demo=False, limit=limit)
         if cached:
             cached = apply_min_citations_filter(cached, (filters or {}).get("min_citations", 0))
             cached = rank_papers(query, cached, limit=limit)
@@ -262,7 +262,7 @@ def load_or_fetch(query, source, limit, use_cache=False, filters=None):
 
     papers = fetch_real_papers(query, source, limit, filters=filters)
     if not papers:
-        cached = cached_query(query, include_demo=False)
+        cached = cached_query(query, include_demo=False, limit=limit)
         if cached:
             cached = apply_min_citations_filter(cached, (filters or {}).get("min_citations", 0))
             cached = rank_papers(query, cached, limit=limit)
@@ -305,7 +305,7 @@ def load_papers_safely(query, source, limit, use_cache=False, filters=None):
             status_message = "远程 API 暂时不可用。"
             error = f"远程 API 请求失败：{exc}"
 
-        cached = cached_query(query, include_demo=False)
+        cached = cached_query(query, include_demo=False, limit=limit)
         if not papers and cached:
             cached = apply_min_citations_filter(cached, (filters or {}).get("min_citations", 0))
             papers = rank_papers(query, cached, limit=limit)
@@ -473,11 +473,12 @@ def paper_detail(paper_id):
     if not target:
         return redirect(url_for("index"))
     query = request.args.get("query", "").strip()
+    limit = normalize_limit(request.args.get("limit"))
     paper_ids = parse_paper_ids(request.args.get("ids", ""))
     if paper_ids:
         cohort = get_papers_by_ids(paper_ids)
     elif query:
-        cohort = rank_papers(query, cached_query(query, include_demo=False))
+        cohort = rank_papers(query, cached_query(query, include_demo=False, limit=limit))
     else:
         cohort = [target]
     recommendations = recommend_by_paper(target, cohort)
@@ -499,11 +500,12 @@ def paper_detail(paper_id):
 def recommend(paper_id):
     target = get_paper(paper_id)
     query = request.args.get("query", "").strip()
+    limit = normalize_limit(request.args.get("limit"))
     paper_ids = parse_paper_ids(request.args.get("ids", ""))
     if paper_ids:
         papers = get_papers_by_ids(paper_ids)
     elif query:
-        papers = rank_papers(query, cached_query(query, include_demo=False))
+        papers = rank_papers(query, cached_query(query, include_demo=False, limit=limit))
     else:
         papers = [target] if target else []
     ids_param = paper_ids_for_url(papers)
@@ -522,10 +524,11 @@ def recommend(paper_id):
 def export():
     paper_ids = parse_paper_ids(request.args.get("ids", ""))
     query = request.args.get("query", "").strip()
+    limit = normalize_limit(request.args.get("limit"))
     if paper_ids:
         papers = get_papers_by_ids(paper_ids)
     elif query:
-        papers = rank_papers(query, cached_query(query, include_demo=False))
+        papers = rank_papers(query, cached_query(query, include_demo=False, limit=limit))
     else:
         return redirect(url_for("index"))
     path = export_papers_to_csv(papers)

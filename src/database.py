@@ -251,8 +251,8 @@ def get_papers_by_ids(paper_ids, db_path=DB_PATH):
     return [paper for paper in (get_paper(paper_id, db_path=db_path) for paper_id in paper_ids) if paper]
 
 
-def cached_query(query, db_path=DB_PATH, include_demo=False):
+def cached_query(query, db_path=DB_PATH, include_demo=False, limit=50):
     if not query:
         return []
-    papers = list_papers(query=query, limit=50, db_path=db_path, include_demo=include_demo)
+    papers = list_papers(query=query, limit=limit, db_path=db_path, include_demo=include_demo)
     return [get_paper(paper["id"], db_path=db_path) for paper in papers]
