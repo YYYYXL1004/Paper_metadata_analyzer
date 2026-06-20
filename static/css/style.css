@@ -1629,3 +1629,62 @@ th:last-child {
     grid-template-columns: 1fr;
   }
 }
+
+.recent-searches {
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.recent-label {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.recent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.recent-chip {
+  display: inline-block;
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  font-size: 13px;
+  color: var(--text);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.recent-chip:hover {
+  background: var(--blue);
+  color: white;
+  border-color: var(--blue);
+  transform: translateY(-1px);
+}
+
+.citation-trend-section {
+  margin: 24px 0;
+  padding: 20px;
+  background: var(--surface-soft);
+  border-radius: 8px;
+}
+
+.citation-trend-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.citation-trend-section .chart-img {
+  width: 100%;
+  border-radius: 6px;
+}

@@ -24,15 +24,16 @@ from src.database import (
     cached_query,
     get_paper,
     get_papers_by_ids,
+    get_recent_queries,
     init_db,
     save_papers,
 )
-from src.exporter import export_papers_to_csv
+from src.exporter import export_papers_to_csv, export_papers_to_bibtex
 from src.network import build_author_network
 from src.parser import parse_arxiv_response, parse_crossref_response, parse_openalex_response
 from src.ranker import rank_papers
 from src.recommender import recommend_by_paper
-from src.visualizer import generate_all_charts
+from src.visualizer import generate_all_charts, generate_all_charts_with_network, save_paper_citation_trend
 
 
 app = Flask(__name__)
@@ -382,7 +383,9 @@ def index():
                 **filters_for_url(filters),
             )
         )
-    return render_template("index.html")
+
+    recent_queries = get_recent_queries(limit=5)
+    return render_template("index.html", recent_queries=recent_queries)
 
 
 @app.route("/search")
@@ -444,8 +447,8 @@ def analysis():
         status_message = "请先在首页输入关键词并调用学术 API，再查看分析结果。"
 
     stats = analyze_papers(papers)
-    charts = generate_all_charts(papers, stats)
     network = build_author_network(papers)
+    charts = generate_all_charts_with_network(papers, stats, network)
     summary = generate_summary(stats)
     insights = generate_insights(stats)
     if query:
@@ -490,6 +493,7 @@ def paper_detail(paper_id):
         cohort = [target]
     recommendations = recommend_by_paper(target, cohort)
     cohort_stats = compute_cohort_position(target, cohort)
+    citation_trend_chart = save_paper_citation_trend(target, cohort)
     ids_param = paper_ids_for_url(cohort) if paper_ids else ""
     context_args = search_context_args(query, source, limit, filters, ids_param)
     return render_template(
@@ -498,6 +502,7 @@ def paper_detail(paper_id):
         cohort=cohort,
         cohort_stats=cohort_stats,
         recommendations=recommendations,
+        citation_trend_chart=citation_trend_chart,
         query=query,
         paper_ids=ids_param,
         context_args=context_args,
@@ -536,13 +541,20 @@ def export():
     paper_ids = parse_paper_ids(request.args.get("ids", ""))
     query = request.args.get("query", "").strip()
     limit = normalize_limit(request.args.get("limit"))
+    export_format = request.args.get("format", "csv").lower()
+
     if paper_ids:
         papers = get_papers_by_ids(paper_ids)
     elif query:
         papers = rank_papers(query, cached_query(query, include_demo=False, limit=limit))
     else:
         return redirect(url_for("index"))
-    path = export_papers_to_csv(papers)
+
+    if export_format == "bibtex":
+        path = export_papers_to_bibtex(papers)
+    else:
+        path = export_papers_to_csv(papers)
+
     return send_from_directory(EXPORT_DIR, path.name, as_attachment=True)
 
 

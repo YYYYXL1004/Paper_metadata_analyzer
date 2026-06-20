@@ -84,6 +84,15 @@
     </div>
   </div>
 
+  {% if citation_trend_chart %}
+  <div class="citation-trend-section">
+    <h3>引用对比分析</h3>
+    <img src="{{ url_for('static', filename='charts/' + citation_trend_chart) }}"
+         alt="引用趋势对比图"
+         class="chart-img clickable-chart">
+  </div>
+  {% endif %}
+
   {% if cohort_stats.citation_max > 0 %}
     {% set target_pct = (cohort_stats.citation_target / cohort_stats.citation_max * 100)|round(1) %}
     {% set median_pct = (cohort_stats.citation_median / cohort_stats.citation_max * 100)|round(1) %}

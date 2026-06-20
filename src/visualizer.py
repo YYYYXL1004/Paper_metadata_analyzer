@@ -205,6 +205,75 @@ def save_word_cloud(stats, chart_dir=CHART_DIR):
     return path.name
 
 
+def save_author_network(network, chart_dir=CHART_DIR):
+    """Generate author collaboration network visualization"""
+    ensure_chart_dir(chart_dir)
+    path = Path(chart_dir) / "author_network.png"
+
+    edges = network.get("edges", [])[:30]  # Top 30 edges
+    centrality = network.get("centrality", [])[:15]  # Top 15 authors
+
+    if not edges:
+        plt.figure(figsize=(8, 4.5))
+        plt.text(0.5, 0.5, "暂无合作网络数据", ha="center", va="center")
+        plt.axis("off")
+        plt.tight_layout()
+        plt.savefig(path, dpi=150)
+        plt.close()
+        return path.name
+
+    # Build graph
+    import networkx as nx
+
+    G = nx.Graph()
+
+    # Add edges with weights
+    for author1, author2, weight in edges:
+        G.add_edge(author1, author2, weight=weight)
+
+    # Calculate layout
+    pos = nx.spring_layout(G, k=1.5, iterations=50, seed=42)
+
+    # Draw
+    plt.figure(figsize=(10, 7))
+
+    # Draw edges with varying thickness
+    weights = [G[u][v]["weight"] for u, v in G.edges()]
+    max_weight = max(weights) if weights else 1
+    edge_widths = [2 + 8 * (w / max_weight) for w in weights]
+
+    nx.draw_networkx_edges(
+        G, pos, width=edge_widths, alpha=0.3, edge_color="#64748b"
+    )
+
+    # Draw nodes with size based on centrality
+    node_sizes = []
+    centrality_dict = {author: score for author, score in centrality}
+    max_centrality = max(centrality_dict.values()) if centrality_dict else 1
+
+    for node in G.nodes():
+        score = centrality_dict.get(node, 0)
+        size = 300 + 2000 * (score / max_centrality) if max_centrality else 300
+        node_sizes.append(size)
+
+    nx.draw_networkx_nodes(
+        G, pos, node_size=node_sizes, node_color="#2563eb", alpha=0.7
+    )
+
+    # Draw labels
+    nx.draw_networkx_labels(
+        G, pos, font_size=8, font_family="Microsoft YaHei", font_weight="bold"
+    )
+
+    plt.title("作者合作网络（节点大小表示合作次数）")
+    plt.axis("off")
+    plt.tight_layout()
+    plt.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close()
+
+    return path.name
+
+
 def generate_all_charts(papers, stats, chart_dir=CHART_DIR):
     return [
         {"title": "年度发文趋势", "image": save_year_trend(stats, chart_dir)},
@@ -216,3 +285,66 @@ def generate_all_charts(papers, stats, chart_dir=CHART_DIR):
         {"title": "数据源占比", "image": save_source_pie(stats, chart_dir)},
         {"title": "年度平均引用", "image": save_yearly_avg_citation(stats, chart_dir)},
     ]
+
+
+def generate_all_charts_with_network(papers, stats, network, chart_dir=CHART_DIR):
+    """Generate all charts including author network visualization"""
+    charts = generate_all_charts(papers, stats, chart_dir)
+    charts.append({"title": "作者合作网络", "image": save_author_network(network, chart_dir)})
+    return charts
+
+
+def save_paper_citation_trend(paper, cohort, chart_dir=CHART_DIR):
+    """Generate citation trend comparison for a single paper"""
+    ensure_chart_dir(chart_dir)
+    paper_id = paper.get("id", "paper")
+    path = Path(chart_dir) / f"citation_trend_{paper_id}.png"
+
+    paper_year = int(paper.get("year") or 0)
+    paper_citations = int(paper.get("citation_count") or 0)
+
+    # Get same-year papers from cohort
+    same_year_papers = [p for p in cohort if int(p.get("year") or 0) == paper_year]
+
+    plt.figure(figsize=(8, 4.5))
+
+    if same_year_papers and len(same_year_papers) > 1:
+        # Calculate statistics for same-year papers
+        citations = [int(p.get("citation_count") or 0) for p in same_year_papers]
+        avg_citations = sum(citations) / len(citations)
+        max_citations = max(citations)
+        min_citations = min(citations)
+
+        # Create bar chart
+        categories = ["本文", "同年平均", "同年最高", "同年最低"]
+        values = [paper_citations, avg_citations, max_citations, min_citations]
+        colors = ["#2563eb", "#0f8f68", "#f59e0b", "#64748b"]
+
+        bars = plt.bar(categories, values, color=colors, alpha=0.8)
+
+        # Add value labels on bars
+        for bar in bars:
+            height = bar.get_height()
+            plt.text(
+                bar.get_x() + bar.get_width() / 2.0,
+                height,
+                f"{int(height)}",
+                ha="center",
+                va="bottom",
+                fontsize=10,
+            )
+
+        plt.title(f"{paper_year} 年论文引用对比（{len(same_year_papers)} 篇）")
+        plt.ylabel("引用次数")
+    else:
+        # Just show the paper's citations
+        plt.bar(["本文"], [paper_citations], color="#2563eb")
+        plt.text(0, paper_citations, f"{paper_citations}", ha="center", va="bottom")
+        plt.title(f"{paper_year} 年论文引用次数")
+        plt.ylabel("引用次数")
+
+    plt.tight_layout()
+    plt.savefig(path, dpi=150)
+    plt.close()
+
+    return path.name

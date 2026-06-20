@@ -39,6 +39,22 @@
     {% if error %}
       <div class="notice error">{{ error }}</div>
     {% endif %}
+
+    {% if recent_queries %}
+    <div class="recent-searches">
+      <p class="recent-label">最近搜索：</p>
+      <div class="recent-chips">
+        {% for item in recent_queries %}
+        <a href="{{ url_for('search', query=item.query, source='cache', limit=100, use_cache='1') }}"
+           class="recent-chip"
+           title="共 {{ item.count }} 篇论文，上次搜索: {{ item.last_search[:10] }}">
+          {{ item.query }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     <label>
       关键词 / DOI / 研究主题
       <input name="query" placeholder="artificial intelligence education" required>

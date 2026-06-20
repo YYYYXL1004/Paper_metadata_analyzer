@@ -66,6 +66,11 @@ def init_db(db_path=DB_PATH):
                 FOREIGN KEY (paper_id) REFERENCES papers(id),
                 FOREIGN KEY (keyword_id) REFERENCES keywords(id)
             );
+
+            CREATE INDEX IF NOT EXISTS idx_papers_query ON papers(query);
+            CREATE INDEX IF NOT EXISTS idx_papers_year ON papers(year);
+            CREATE INDEX IF NOT EXISTS idx_papers_citation ON papers(citation_count);
+            CREATE INDEX IF NOT EXISTS idx_papers_created_at ON papers(created_at);
             """
         )
         ensure_column(conn, "papers", "relevance_score", "REAL DEFAULT 0")
@@ -256,3 +261,21 @@ def cached_query(query, db_path=DB_PATH, include_demo=False, limit=50):
         return []
     papers = list_papers(query=query, limit=limit, db_path=db_path, include_demo=include_demo)
     return [get_paper(paper["id"], db_path=db_path) for paper in papers]
+
+
+def get_recent_queries(limit=5, db_path=DB_PATH):
+    """Get recent search queries with count and last search time"""
+    init_db(db_path)
+    with get_connection(db_path) as conn:
+        rows = conn.execute(
+            """
+            SELECT query, COUNT(*) as count, MAX(created_at) as last_search
+            FROM papers
+            WHERE query IS NOT NULL AND query != '' AND COALESCE(source, '') != 'demo'
+            GROUP BY query
+            ORDER BY last_search DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+    return rows_to_dicts(rows)
