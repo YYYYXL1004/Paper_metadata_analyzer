@@ -558,6 +558,23 @@ def export():
     return send_from_directory(EXPORT_DIR, path.name, as_attachment=True)
 
 
+@app.route("/paper/<int:paper_id>/export")
+def export_single_paper(paper_id):
+    """导出单篇论文为 BibTeX 格式"""
+    paper = get_paper(paper_id)
+    if not paper:
+        return redirect(url_for("index"))
+
+    export_format = request.args.get("format", "bibtex").lower()
+
+    if export_format == "bibtex":
+        path = export_papers_to_bibtex([paper])
+    else:
+        path = export_papers_to_csv([paper])
+
+    return send_from_directory(EXPORT_DIR, path.name, as_attachment=True)
+
+
 @app.route("/seed")
 def seed():
     paper_ids = save_papers(demo_papers(), "demo")

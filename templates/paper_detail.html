@@ -21,6 +21,7 @@
     {% if paper.url %}
       <a class="text-link" href="{{ paper.url }}" target="_blank" rel="noreferrer">查看原文链接 →</a>
     {% endif %}
+    <a class="button secondary" href="{{ url_for('export_single_paper', paper_id=paper.id, format='bibtex') }}">导出 BibTeX</a>
   </div>
 </section>
 
@@ -83,15 +84,6 @@
       <strong>{{ cohort_stats.citation_max }}</strong>
     </div>
   </div>
-
-  {% if citation_trend_chart %}
-  <div class="citation-trend-section">
-    <h3>引用对比分析</h3>
-    <img src="{{ url_for('static', filename='charts/' + citation_trend_chart) }}"
-         alt="引用趋势对比图"
-         class="chart-img clickable-chart">
-  </div>
-  {% endif %}
 
   {% if cohort_stats.citation_max > 0 %}
     {% set target_pct = (cohort_stats.citation_target / cohort_stats.citation_max * 100)|round(1) %}
