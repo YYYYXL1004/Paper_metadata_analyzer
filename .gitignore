@@ -7,3 +7,4 @@ data/
 exports/
 static/charts/
 flask.log
+flask.err.log
